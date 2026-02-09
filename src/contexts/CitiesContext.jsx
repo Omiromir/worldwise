@@ -6,7 +6,11 @@ import {
   useCallback,
 } from "react";
 
-const BASE_URL = "http://localhost:9000";
+const isLocal = import.meta.env.DEV;
+
+// Local dev uses json-server. Production uses a deployed static JSON file.
+const BASE_URL = isLocal ? "http://localhost:9000" : "";
+const CITIES_URL = isLocal ? `${BASE_URL}/cities` : "/data/cities.json";
 
 const CitiesContext = createContext();
 
@@ -71,7 +75,7 @@ function CitiesProvider({ children }) {
       dispatch({ type: "loading" });
 
       try {
-        const res = await fetch(`${BASE_URL}/cities`);
+        const res = await fetch(CITIES_URL);
         const data = await res.json();
         dispatch({ type: "cities/loaded", payload: data });
       } catch {
@@ -91,9 +95,17 @@ function CitiesProvider({ children }) {
       dispatch({ type: "loading" });
 
       try {
-        const res = await fetch(`${BASE_URL}/cities/${id}`);
-        const data = await res.json();
-        dispatch({ type: "city/loaded", payload: data });
+        if (isLocal) {
+          const res = await fetch(`${BASE_URL}/cities/${id}`);
+          const data = await res.json();
+          dispatch({ type: "city/loaded", payload: data });
+        } else {
+          // Production: load from static JSON and find locally
+          const res = await fetch("/data/cities.json");
+          const data = await res.json();
+          const city = data.find((c) => String(c.id) === String(id));
+          dispatch({ type: "city/loaded", payload: city ?? {} });
+        }
       } catch {
         dispatch({
           type: "rejected",
@@ -108,6 +120,9 @@ function CitiesProvider({ children }) {
     dispatch({ type: "loading" });
 
     try {
+      if (!isLocal)
+        throw new Error("Create is disabled in production (static JSON).");
+
       const res = await fetch(`${BASE_URL}/cities`, {
         method: "POST",
         body: JSON.stringify(newCity),
@@ -130,6 +145,9 @@ function CitiesProvider({ children }) {
     dispatch({ type: "loading" });
 
     try {
+      if (!isLocal)
+        throw new Error("Delete is disabled in production (static JSON).");
+
       await fetch(`${BASE_URL}/cities/${id}`, {
         method: "DELETE",
       });
