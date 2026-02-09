@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && cpy \"data/**/*\" dist/data",
+    "build": "vite build && npx cpy-cli \"data/**/*\" dist/data",
     "preview": "vite preview",
     "server": "json-server --watch data/cities.json --port 9000 --delay 500"
   },
