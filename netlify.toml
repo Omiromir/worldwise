@@ -1,0 +1,3 @@
+[build]
+  command = "node -v && npm -v && npm ci && npm run build"
+  publish = "dist"
